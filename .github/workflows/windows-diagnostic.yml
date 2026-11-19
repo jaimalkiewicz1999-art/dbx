@@ -1,6 +1,11 @@
 name: Windows Diagnostic Build
 
 on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - .github/workflows/windows-diagnostic.yml
   workflow_dispatch:
     inputs:
       target_ref:
@@ -13,12 +18,31 @@ permissions:
 
 jobs:
   build-windows-portable:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.repository == 'jaimalkiewicz1999-art/dbx' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: windows-2022
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-          ref: ${{ inputs.target_ref }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || inputs.target_ref }}
+
+      - name: Verify source and checkout authentication removal
+        shell: pwsh
+        env:
+          EXPECTED_PR_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          $credentialKeys = @(& git config --local --name-only --get-regexp '^(http\..*\.extraheader|credential(\..*)?)$')
+          if ($LASTEXITCODE -notin @(0, 1)) { throw "Could not inspect checkout authentication settings" }
+          if ($credentialKeys.Count -ne 0) { throw "Checkout retained an authentication setting" }
+          $sourceSha = (& git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "Could not resolve checked-out source" }
+          if ($env:EXPECTED_PR_SHA -and $sourceSha -cne $env:EXPECTED_PR_SHA) { throw "Unexpected PR source revision" }
+          Write-Output "Verified source $sourceSha without persisted checkout authentication"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -52,8 +76,67 @@ jobs:
           Set-Content -Path (Join-Path $portableDir "portable.dbx") -Value "" -NoNewline
           Compress-Archive -Path (Join-Path $portableDir "*") -DestinationPath "DBX-diagnostic-x64-portable.zip" -Force
 
+      - name: Verify portable ZIP against build outputs
+        shell: pwsh
+        run: |
+          $sourceFiles = [ordered]@{
+            "DBX.exe" = "target\x86_64-pc-windows-msvc\release\dbx.exe"
+            "LICENSE" = "LICENSE"
+            "README.md" = "README.md"
+          }
+          $expectedNames = @($sourceFiles.Keys) + "portable.dbx"
+          $zipPath = (Resolve-Path "DBX-diagnostic-x64-portable.zip").Path
+          $archive = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
+          $hashes = [ordered]@{}
+          try {
+            $actualNames = @($archive.Entries | ForEach-Object { $_.FullName })
+            if ($actualNames.Count -ne $expectedNames.Count -or
+                (Compare-Object -CaseSensitive ($expectedNames | Sort-Object) ($actualNames | Sort-Object))) {
+              throw "Portable ZIP has unexpected or missing entries"
+            }
+            foreach ($name in $sourceFiles.Keys) {
+              $entry = $archive.GetEntry($name)
+              if ($entry.Length -le 0) { throw "Portable ZIP contains an empty required file" }
+              $stream = $entry.Open()
+              $hasher = [System.Security.Cryptography.SHA256]::Create()
+              try { $hash = [Convert]::ToHexString($hasher.ComputeHash($stream)).ToLowerInvariant() }
+              finally { $hasher.Dispose(); $stream.Dispose() }
+              $sourceHash = (Get-FileHash -Algorithm SHA256 $sourceFiles[$name]).Hash.ToLowerInvariant()
+              if ($hash -cne $sourceHash) { throw "Portable ZIP file does not match its build source" }
+              $hashes[$name] = $hash
+            }
+            if ($archive.GetEntry("portable.dbx").Length -ne 0) { throw "Invalid portable-mode marker" }
+          } finally { $archive.Dispose() }
+          $exeStream = [System.IO.File]::OpenRead((Resolve-Path $sourceFiles["DBX.exe"]).Path)
+          $reader = [System.IO.BinaryReader]::new($exeStream)
+          try {
+            if ($reader.ReadUInt16() -ne 0x5a4d) { throw "Build output is not a Windows executable" }
+            $exeStream.Position = 0x3c
+            $peOffset = $reader.ReadInt32()
+            if ($peOffset -lt 0x40 -or $peOffset -gt $exeStream.Length - 26) { throw "Invalid PE header offset" }
+            $exeStream.Position = $peOffset
+            if ($reader.ReadUInt32() -ne 0x4550 -or $reader.ReadUInt16() -ne 0x8664) { throw "Build output is not x64 PE" }
+            $exeStream.Position = $peOffset + 24
+            if ($reader.ReadUInt16() -ne 0x20b) { throw "Build output is not PE32+" }
+          } finally { $reader.Dispose() }
+          $sourceSha = (& git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0) { throw "Could not resolve source revision for receipt" }
+          $receipt = [ordered]@{
+            source_sha = $sourceSha
+            target = "x86_64-pc-windows-msvc"
+            zip_sha256 = (Get-FileHash -Algorithm SHA256 $zipPath).Hash.ToLowerInvariant()
+            zip_bytes = (Get-Item $zipPath).Length
+            entries = $expectedNames
+            file_sha256 = $hashes
+          }
+          $receipt | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 "DBX-diagnostic-x64-portable.json"
+          $receipt | ConvertTo-Json -Depth 4
+
       - name: Upload diagnostic artifact
         uses: actions/upload-artifact@v4
         with:
           name: DBX-diagnostic-x64-portable
-          path: DBX-diagnostic-x64-portable.zip
+          path: |
+            DBX-diagnostic-x64-portable.zip
+            DBX-diagnostic-x64-portable.json
+          if-no-files-found: error
