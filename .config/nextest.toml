@@ -1,0 +1,8 @@
+# Both Salesforce browser-flow tests use the registered loopback callback port.
+# Nextest uses separate processes, so a process-local mutex cannot protect the port.
+[test-groups.salesforce-oauth-loopback]
+max-threads = 1
+
+[[profile.default.overrides]]
+filter = 'package(dbx-drivers) & (test(=salesforce_oauth::tests::browser_flow_exchanges_pkce_code_for_tokens) | test(=salesforce_oauth::tests::confidential_app_sends_client_secret))'
+test-group = "salesforce-oauth-loopback"
