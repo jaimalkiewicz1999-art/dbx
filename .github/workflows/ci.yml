@@ -22,7 +22,7 @@ jobs:
       # The workspace intentionally contains platform-specific CLI/MCP packages for every release target.
       NPM_CONFIG_LOGLEVEL: error
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -69,7 +69,7 @@ jobs:
     env:
       NPM_CONFIG_LOGLEVEL: error
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -100,7 +100,7 @@ jobs:
         shard: [1, 2]
     name: frontend-test (${{ matrix.shard }}/2)
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -135,7 +135,7 @@ jobs:
     if: always() && !cancelled()
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Check selected frontend jobs
         env:
           NEEDS_JSON: ${{ toJSON(needs) }}
@@ -146,7 +146,7 @@ jobs:
     if: needs.changes.outputs.github_scripts == 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -173,7 +173,7 @@ jobs:
       # (see rust-fmt-clippy) and lean on the rust-cache restore from main.
       RUSTC_WRAPPER: ${{ secrets.SCCACHE_S3_BUCKET != '' && 'sccache' || '' }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -285,7 +285,7 @@ jobs:
       SCCACHE_GHA_ENABLED: "true"
       SCCACHE_GHA_VERSION: windows-standard-v1
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Rust for standard Windows
         uses: dtolnay/rust-toolchain@1.97.1
@@ -320,7 +320,7 @@ jobs:
       # prebuilt AWS-LC cache key must move together.
       WIN7_NIGHTLY_TOOLCHAIN: nightly-2026-07-22
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -705,7 +705,7 @@ jobs:
       CC: "sccache cl.exe"
       CXX: "sccache cl.exe"
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Rust for Windows 7
         uses: dtolnay/rust-toolchain@nightly
@@ -754,7 +754,7 @@ jobs:
       # The fast lane skips only system font discovery while retaining the other default capabilities.
       RUST_FEATURE_MODE: ${{ github.event_name == 'pull_request' && needs.changes.outputs.rust_full != 'true' && 'fast' || 'full' }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install system dependencies
         run: |
@@ -837,7 +837,7 @@ jobs:
       RUST_FEATURE_MODE: ${{ github.event_name == 'pull_request' && needs.changes.outputs.rust_full != 'true' && 'fast' || 'full' }}
       RUST_TEST_GROUP: ${{ matrix.group }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install system dependencies
         run: |
@@ -935,7 +935,7 @@ jobs:
     if: always() && !cancelled()
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Check selected rust jobs
         env:
           NEEDS_JSON: ${{ toJSON(needs) }}
@@ -946,7 +946,7 @@ jobs:
     if: needs.changes.outputs.jdbc == 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
@@ -974,7 +974,7 @@ jobs:
     if: needs.changes.outputs.offline_jdbc == 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Java
         uses: actions/setup-java@v6
@@ -1015,7 +1015,7 @@ jobs:
     runs-on: ubuntu-24.04
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
@@ -1049,7 +1049,7 @@ jobs:
       agent_integration_changed: ${{ steps.plan.outputs.agent_integration_changed }}
       plan: ${{ steps.plan.outputs.plan }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 1
 
@@ -1206,7 +1206,7 @@ jobs:
     if: always() && !cancelled()
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Check selected agents jobs
         env:
           NEEDS_JSON: ${{ toJSON(needs) }}
@@ -1216,7 +1216,7 @@ jobs:
     if: needs.changes.outputs.fast == 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@1.97.1
         with:
@@ -1260,7 +1260,7 @@ jobs:
       run:
         working-directory: agents
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
@@ -1283,7 +1283,7 @@ jobs:
       run:
         working-directory: agents
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup Java
         uses: actions/setup-java@v6
         with:
@@ -1317,7 +1317,7 @@ jobs:
       run:
         working-directory: agents
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Install system dependencies
         if: matrix.driver == 'duckdb'
         run: |
@@ -1404,7 +1404,7 @@ jobs:
       run:
         working-directory: agents
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup Go
         uses: actions/setup-go@v7
         with:
@@ -1428,7 +1428,7 @@ jobs:
       run:
         working-directory: agents
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup RocketMQ server Java
         if: matrix.scenario == 'rocketmq'
         uses: actions/setup-java@v6
@@ -1485,7 +1485,7 @@ jobs:
     if: always() && !cancelled()
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Check selected all jobs
         env:
           NEEDS_JSON: ${{ toJSON(needs) }}
