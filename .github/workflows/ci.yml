@@ -1110,6 +1110,7 @@ jobs:
               - 'Cargo.toml'
               - 'Cargo.lock'
               - 'rust-toolchain*'
+              - '.config/nextest.toml'
               - '.github/workflows/ci.yml'
             jdbc:
               - 'plugins/jdbc/**'
