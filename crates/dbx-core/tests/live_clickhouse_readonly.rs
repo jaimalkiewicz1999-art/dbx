@@ -19,7 +19,10 @@ async fn live_clickhouse_readonly_user_uses_client_side_result_limits() {
         .expect("readonly ClickHouse query should fall back to client-side limiting");
     assert_eq!(result.columns, vec!["number"]);
     assert_eq!(result.column_types, vec!["UInt64"]);
-    assert_eq!(result.rows, vec![vec![serde_json::json!(0)], vec![serde_json::json!(1)]]);
+    // ClickHouse can quote UInt64 values according to the server's JSON settings.
+    let numeric_rows = vec![vec![serde_json::json!(0)], vec![serde_json::json!(1)]];
+    let quoted_rows = vec![vec![serde_json::json!("0")], vec![serde_json::json!("1")]];
+    assert!(result.rows == numeric_rows || result.rows == quoted_rows, "unexpected rows: {:?}", result.rows);
     assert!(result.truncated);
 
     let mut columns = Vec::new();
@@ -36,5 +39,5 @@ async fn live_clickhouse_readonly_user_uses_client_side_result_limits() {
     .await
     .expect("readonly ClickHouse stream should fall back to client-side limiting");
     assert_eq!(columns, vec![("number".to_string(), "UInt64".to_string())]);
-    assert_eq!(rows, vec![vec![serde_json::json!(0)], vec![serde_json::json!(1)]]);
+    assert_eq!(rows, result.rows);
 }
